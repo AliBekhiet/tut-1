@@ -1,108 +1,82 @@
 import express from 'express';
+
 const app = express();
 
-const listings = [
-    {id: 1,title: "Nile View apartment", pricepernight:85 },
-    {id: 2,title: "Beach House", pricepernight:140 },
-    {id: 3,title: "Desert Eco-Lodge", pricepernight:60 },
-];
-function getListings() {
-    return listings;
-}
-function getListingById(id) {
-    return listings.find(listing => listing.id === id);
-}
-function addListing(listing) {
-    const listing ={
-        id= nextId++,
-        title:data.title,
-        pricepernight:data.pricepernight
-    
-
-    };
-    listings.push(listing);
-    return listing;
-}
-function updateListing(id, data) {
-    const listing = getListingById(id);
-    if (listing) {
-        listing.title = data.title;
-        listing.pricepernight = data.pricepernight;
-    }
-    function removeListing(id) {
-    const index = listings.findIndex(listing => listing.id === id);
-
-    if (index !== -1) {
-        return listings.splice(index, 1)[0];
-    }
-
-    return null;
-}
-
-import express from 'express';
-const app = express();
+app.use((req, res, next) => {
+    console.log(req.method, req.url);
+    next();
+});
 
 app.use(express.json());
 
 const listings = [
-    { id: 1, title: "Nile View apartment", pricepernight: 85 },
-    { id: 2, title: "Beach House", pricepernight: 140 },
-    { id: 3, title: "Desert Eco-Lodge", pricepernight: 60 },
+    { id: 1, title: "Nile View apartment", pricePerNight: 85 },
+    { id: 2, title: "Beach House", pricePerNight: 140 },
+    { id: 3, title: "Desert Eco-Lodge", pricePerNight: 60 }
 ];
 
 let nextId = 4;
 
-// GET: Get all listings
-function getListings() {
+function getAllListings() {
     return listings;
 }
 
-// GET: Get listing by ID
 function getListingById(id) {
     return listings.find(listing => listing.id === id);
 }
 
-// POST: Add a new listing
 function addListing(data) {
-    const listing = {
+    const newListing = {
         id: nextId++,
         title: data.title,
-        pricepernight: data.pricePerNight
+        pricePerNight: data.pricePerNight
     };
 
-    listings.push(listing);
-    return listing;
+    listings.push(newListing);
+    return newListing;
 }
 
-// PUT: Update a listing
 function updateListing(id, data) {
     const listing = getListingById(id);
 
-    if (listing) {
-        listing.title = data.title;
-        listing.pricepernight = data.pricePerNight;
-        return listing;
+    if (!listing) {
+        return null;
     }
 
-    return null;
+    listing.title = data.title;
+    listing.pricePerNight = data.pricePerNight;
+
+    return listing;
 }
 
-// DELETE: Remove a listing
 function removeListing(id) {
     const index = listings.findIndex(listing => listing.id === id);
 
-    if (index !== -1) {
-        return listings.splice(index, 1)[0];
+    if (index === -1) {
+        return null;
     }
 
-    return null;
+    return listings.splice(index, 1)[0];
 }
 
-// POST Handler
+function handleGetAll(req, res) {
+    res.status(200).json(getAllListings());
+}
+
+function handleGetOne(req, res) {
+    const listing = getListingById(Number(req.params.id));
+
+    if (!listing) {
+        return res.status(404).json({ error: "Listing not found" });
+    }
+
+    res.status(200).json(listing);
+}
+
 function handleCreate(req, res) {
     const data = req.body || {};
 
-    if (!data.title || !data.pricePerNight) {
+    if (!data.title || data.pricePerNight === undefined || data.pricePerNight === null) {
         return res.status(400).json({
             error: "title and pricePerNight are required"
         });
@@ -111,11 +85,10 @@ function handleCreate(req, res) {
     res.status(201).json(addListing(data));
 }
 
-// PUT Handler
 function handleUpdate(req, res) {
     const data = req.body || {};
 
-    if (!data.title || !data.pricePerNight) {
+    if (!data.title || data.pricePerNight === undefined || data.pricePerNight === null) {
         return res.status(400).json({
             error: "title and pricePerNight are required"
         });
@@ -124,47 +97,32 @@ function handleUpdate(req, res) {
     const listing = updateListing(Number(req.params.id), data);
 
     if (!listing) {
-        return res.status(404).json({
-            error: "Listing not found"
-        });
+        return res.status(404).json({ error: "Listing not found" });
     }
 
-    res.json(listing);
+    res.status(200).json(listing);
 }
 
-// DELETE Handler
 function handleDelete(req, res) {
     const listing = removeListing(Number(req.params.id));
-
-    if (!listing) {
-        return res.status(404).json({
-            error: "Listing not found"
-        });
-    }
-
-    res.status(204).end();
-}
-
-// Routes
-app.get('/listings', (req, res) => {
-    res.json(getListings());
-});
-
-app.get('/listings/:id', (req, res) => {
-    const listing = getListingById(Number(req.params.id));
 
     if (!listing) {
         return res.status(404).json({ error: "Listing not found" });
     }
 
-    res.json(listing);
+    res.status(204).end();
+}
+
+app.get("/", (req, res) => {
+    res.send("Welcome to ebd bn'b");
 });
 
-app.post('/listings', handleCreate);
-app.put('/listings/:id', handleUpdate);
-app.delete('/listings/:id', handleDelete);
+app.get("/api/listings", handleGetAll);
+app.get("/api/listings/:id", handleGetOne);
+app.post("/api/listings", handleCreate);
+app.put("/api/listings/:id", handleUpdate);
+app.delete("/api/listings/:id", handleDelete);
 
-// Start server
 app.listen(3000, () => {
-    console.log('Server running on port 3000');
+    console.log("Server running on port 3000");
 });
